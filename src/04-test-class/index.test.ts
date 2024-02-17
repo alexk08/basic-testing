@@ -1,61 +1,95 @@
-import { InsufficientFundsError, TransferFailedError, getBankAccount } from '.';
+import {
+  InsufficientFundsError,
+  SynchronizationFailedError,
+  TransferFailedError,
+  getBankAccount,
+} from '.';
+import lodash from 'lodash';
 
 const INITIAL_VALUE = 100;
 const WRONG_VALUE = 1000;
 const CORRECT_VALUE = 90;
-const account = getBankAccount(INITIAL_VALUE);
-const anotherAccount = getBankAccount(INITIAL_VALUE);
+const FETCHED_BALANCE = 75;
 
 describe('BankAccount', () => {
   test('should create account with initial balance', () => {
+    const account = getBankAccount(INITIAL_VALUE);
     expect(account.getBalance()).toBe(INITIAL_VALUE);
   });
 
   test('should throw InsufficientFundsError error when withdrawing more than balance', () => {
+    const account = getBankAccount(INITIAL_VALUE);
     expect(() => account.withdraw(WRONG_VALUE)).toThrowError(
-      new InsufficientFundsError(account.getBalance()),
+      InsufficientFundsError,
     );
   });
 
   test('should throw error when transferring more than balance', () => {
+    const account = getBankAccount(INITIAL_VALUE);
+    const anotherAccount = getBankAccount(INITIAL_VALUE);
+
     expect(() => account.transfer(WRONG_VALUE, anotherAccount)).toThrowError(
-      new InsufficientFundsError(account.getBalance()),
+      InsufficientFundsError,
     );
   });
 
   test('should throw error when transferring to the same account', () => {
+    const account = getBankAccount(INITIAL_VALUE);
     expect(() => account.transfer(WRONG_VALUE, account)).toThrowError(
-      new TransferFailedError(),
+      TransferFailedError,
     );
   });
 
   test('should deposit money', () => {
-    expect(account.deposit(INITIAL_VALUE).getBalance()).toBe(
-      account.getBalance(),
+    const account = getBankAccount(INITIAL_VALUE);
+    expect(account.deposit(CORRECT_VALUE).getBalance()).toBe(
+      INITIAL_VALUE + CORRECT_VALUE,
     );
   });
 
   test('should withdraw money', () => {
-    expect(account.withdraw(INITIAL_VALUE).getBalance()).toBe(
-      account.getBalance(),
+    const account = getBankAccount(INITIAL_VALUE);
+    expect(account.withdraw(CORRECT_VALUE).getBalance()).toBe(
+      INITIAL_VALUE - CORRECT_VALUE,
     );
   });
 
   test('should transfer money', () => {
-    const initialBalance = anotherAccount.getBalance();
+    const account = getBankAccount(INITIAL_VALUE);
+    const anotherAccount = getBankAccount(INITIAL_VALUE);
     account.transfer(CORRECT_VALUE, anotherAccount);
-    expect(anotherAccount.getBalance()).toBe(initialBalance + CORRECT_VALUE);
+
+    expect(anotherAccount.getBalance()).toBe(INITIAL_VALUE + CORRECT_VALUE);
   });
 
-  // test('fetchBalance should return number in case if request did not failed', async () => {
-  //   // Write your tests here
-  // });
+  test('fetchBalance should return number in case if request did not failed', async () => {
+    const account = getBankAccount(INITIAL_VALUE);
+    jest
+      .spyOn(lodash, 'random')
+      .mockReturnValueOnce(FETCHED_BALANCE)
+      .mockReturnValueOnce(1);
 
-  // test('should set new balance if fetchBalance returned number', async () => {
-  //   // Write your tests here
-  // });
+    const fetchedBalance = await account.fetchBalance();
 
-  // test('should throw SynchronizationFailedError if fetchBalance returned null', async () => {
-  //   // Write your tests here
-  // });
+    expect(typeof fetchedBalance === 'number').toBeTruthy();
+  });
+
+  test('should set new balance if fetchBalance returned number', async () => {
+    const account = getBankAccount(INITIAL_VALUE);
+    jest
+      .spyOn(account, 'fetchBalance')
+      .mockReturnValueOnce(Promise.resolve(FETCHED_BALANCE));
+    await account.synchronizeBalance();
+
+    expect(account.getBalance()).toEqual(FETCHED_BALANCE);
+  });
+
+  test('should throw SynchronizationFailedError if fetchBalance returned null', () => {
+    const account = getBankAccount(INITIAL_VALUE);
+    jest.spyOn(account, 'fetchBalance').mockResolvedValueOnce(null);
+
+    expect(() => account.synchronizeBalance()).rejects.toThrowError(
+      SynchronizationFailedError,
+    );
+  });
 });
