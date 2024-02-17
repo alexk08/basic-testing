@@ -1,12 +1,14 @@
 import { readFileAsynchronously, doStuffByTimeout, doStuffByInterval } from '.';
 import path from 'path';
-import { existsSync } from 'fs';
+import fs from 'fs';
+import fsPromises from 'fs/promises';
 
 const TIMEOUT = 1000;
 const INTERVAL = 1000;
 const SINGLE_CALL = 1;
 const MULTIPLE_CALLS = 5;
 const PATH_TO_FILE = 'pathToFile';
+const FILE_CONTENT = 'fileContent';
 
 describe('doStuffByTimeout', () => {
   beforeAll(() => {
@@ -86,11 +88,13 @@ describe('readFileAsynchronously', () => {
   });
 
   test('should return null if file does not exist', async () => {
-    jest.fn(existsSync).mockReturnValueOnce(false);
+    jest.spyOn(fs, 'existsSync').mockReturnValue(false);
     expect(readFileAsynchronously(PATH_TO_FILE)).resolves.toBeNull();
   });
 
   test('should return file content if file exists', async () => {
-    // Write your test here
+    jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+    jest.spyOn(fsPromises, 'readFile').mockResolvedValue(FILE_CONTENT);
+    expect(readFileAsynchronously(PATH_TO_FILE)).resolves.toEqual(FILE_CONTENT);
   });
 });
