@@ -10,6 +10,9 @@ const MULTIPLE_CALLS = 5;
 const PATH_TO_FILE = 'pathToFile';
 const FILE_CONTENT = 'fileContent';
 
+jest.mock('fs');
+jest.mock('fs/promises');
+
 describe('doStuffByTimeout', () => {
   beforeAll(() => {
     jest.useFakeTimers();
@@ -20,7 +23,6 @@ describe('doStuffByTimeout', () => {
   });
 
   test('should set timeout with provided callback and timeout', () => {
-    jest.useFakeTimers();
     jest.spyOn(global, 'setTimeout');
 
     const cb = jest.fn();
@@ -29,7 +31,6 @@ describe('doStuffByTimeout', () => {
   });
 
   test('should call callback only after timeout', () => {
-    jest.useFakeTimers();
     jest.spyOn(global, 'setTimeout');
 
     const cb = jest.fn();
@@ -54,7 +55,6 @@ describe('doStuffByInterval', () => {
   });
 
   test('should set interval with provided callback and timeout', () => {
-    jest.useFakeTimers();
     jest.spyOn(global, 'setInterval');
 
     const cb = jest.fn();
@@ -63,7 +63,6 @@ describe('doStuffByInterval', () => {
   });
 
   test('should call callback multiple times after multiple intervals', () => {
-    jest.useFakeTimers();
     jest.spyOn(global, 'setInterval');
 
     const cb = jest.fn();
